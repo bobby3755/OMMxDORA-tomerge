@@ -383,11 +383,11 @@ def downsample(*downsample_parameters):
     v = math.floor(frame_end/bin_size)
 
     # isolate the column (if we print this it will show as a dataframe with 2 cols: indexes and time values)
-    daT_column = da.iloc[:, 7]
-    daDY_column = da.iloc[:, 6]
-    daDX_column = da.iloc[:, 5]
-    daPY_column = da.iloc[:, 4]
-    daPX_column = da.iloc[:, 3]
+    daT_column = da.iloc[:, 8]
+    daDY_column = da.iloc[:, 7]
+    daDX_column = da.iloc[:, 6]
+    daPY_column = da.iloc[:, 6]
+    daPX_column = da.iloc[:, 4]
     daI_column = da.iloc[:, 0]
     daX_column = da.iloc[:, 1]
     daY_column = da.iloc[:, 2]
