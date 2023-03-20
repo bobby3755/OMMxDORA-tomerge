@@ -363,12 +363,12 @@ def downsample(*downsample_parameters):
     ma['X movement'] = data.iloc[:, 1].rolling(window=window).mean()
     ma['Y movement'] = data.iloc[:, 2].rolling(window=window).mean()
     ma['X displacement (pixels)'] = data.iloc[:,
-                                              3].rolling(window=window).mean()
-    ma['Y displacement (pixels)'] = data.iloc[:,
                                               4].rolling(window=window).mean()
-    ma['X displacement (nm)'] = data.iloc[:, 5].rolling(window=window).mean()
-    ma['Y displacement (nm)'] = data.iloc[:, 6].rolling(window=window).mean()
-    ma['Time (ms)'] = data.iloc[:, 7].rolling(window=window).mean()
+    ma['Y displacement (pixels)'] = data.iloc[:,
+                                              5].rolling(window=window).mean()
+    ma['X displacement (nm)'] = data.iloc[:, 6].rolling(window=window).mean()
+    ma['Y displacement (nm)'] = data.iloc[:, 7].rolling(window=window).mean()
+    ma['Time (ms)'] = data.iloc[:, 8].rolling(window=window).mean()
 
     # This block delets the null spaces in the new dataframe and realigns the data
     ma = ma.apply(pd.to_numeric, errors='coerce')
