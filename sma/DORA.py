@@ -638,7 +638,7 @@ def graph(plot_type, *graph_parameters):
 
             if save_plot == "yes":
                 # put title input and date time
-                plt.savefig(title+"_2D.png")
+                plt.savefig(my_title+"_2D.png")
         if plot_type == "3D":
             # This block splices the segments between data points and assigns each segment to a color
             points = np.array([x, y, z]).transpose().reshape(-1, 1, 3)
@@ -687,7 +687,7 @@ def graph(plot_type, *graph_parameters):
             ax.set_zlabel(z_axis_label, fontweight='bold', fontsize=14)
 
             if save_plot == 'yes':
-                plt.savefig(title+'_3D.png', dpi=300)
+                plt.savefig(my_title+'_3D.png', dpi=300)
 
             plt.show()
 
@@ -827,7 +827,7 @@ def graph(plot_type, *graph_parameters):
             plt.title(my_title, fontweight='bold', fontsize=16)
 
             if save_plot == "yes":
-                plt.savefig(title+"_2D.png")  # put title input and date time
+                plt.savefig(my_title+"_2D.png")  # put title input and date time
         if plot_type == "find_excluded_angle":
 
             # data organization
@@ -956,21 +956,11 @@ def graph(plot_type, *graph_parameters):
 
             # Title configuration
 
-            # take the file name and separate from the extension
-            # the first value in the tuple is the number
-            # the second is .csv 
-            # the number 00086.csv is the peak --> so this code takes the peak number
-            pk = os.path.splitext(file_name)[0]
-
             graph_type = 'Accumulation of Angle (degrees) as a function of Time (ms)'
 
-            # change title order!!! 
-            list_of_strings = [exp_tag, pk]
-
             #in quotes is the the delimiter between the items in the string
-            # by default it is a _ 
-            my_title = "_".join(list_of_strings)
-            my_title = graph_type + "\n" + my_title #add a line break between graph name and defining parameters
+            # by default it is a 
+            my_title = graph_type + "\n" + exp_tag #add a line break between graph name and defining parameters
             plt.title(my_title)
 
             plt.xlim(0, max(times)+1000)
@@ -1466,10 +1456,27 @@ def graph(plot_type, *graph_parameters):
             do_plot(ax)
             i+= 1
 
+        # plot title and font configurations
+
+        # take the file name and separate from the extension
+        # the first value in the tuple is the number
+        # the second is .csv 
+        # the number 00086.csv is the peak --> so this code takes the peak number
+        pk = os.path.splitext(file_name)[0]
+
+        graph_type = '2D_Map'
+
+        # change title order!!! 
+        list_of_strings = [graph_type, exp_tag]
+
+        #in quotes is the the delimiter between the items in the string
+        # by default it is a _ 
+        my_title = "_".join(list_of_strings)
+
         if save_plot == "yes":
             
             framestr = '{}'.format(frames_per_plot)
-            plt.savefig(title+'_'+framestr+'_frames_per_plot'+'_gridplot.png', dpi=300)
+            plt.savefig(my_title+'_'+framestr+'_frames_per_plot'+'_gridplot.png', dpi=300)
 
         plt.show()
 
