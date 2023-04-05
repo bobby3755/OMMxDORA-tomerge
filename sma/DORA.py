@@ -469,7 +469,7 @@ AngleTime = ["radius_filter", "find_err_angle", "angular_continuous_filtered",
 animations = ["interactive", "animated", "HTML"]
 
 #Trajectory map parameters:
-tajectory_map_parameters = [file_name, down_sampled_df, plot_type, display_center, exp_tag, x_axis_label, y_axis_label, z_axis_label, unit, 
+tajectory_map_parameters = [file_name, down_sampled_df, plot_type, display_center, expected_radius, x_axis_label, y_axis_label, z_axis_label, unit, 
 pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag]
 
 #Angle Versus Time (AVT or avt) parameters:
@@ -526,8 +526,8 @@ def graph(plot_type, *graph_parameters):
         #### Set up block#####
 
         # Accept my variables from graphing parameters
-        [file_name, down_sampled_df, plot_type, display_center, title, x_axis_label, y_axis_label, z_axis_label, unit, pixel_min, pixel_max,
-            axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step, cmap, exp_tag] = graph_parameters
+        [file_name, down_sampled_df, plot_type, display_center, expected_radius, x_axis_label, y_axis_label, z_axis_label, unit, 
+        pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag] = graph_parameters
 
         # Claire's code accepts down_sampled_df as df
         df = down_sampled_df
