@@ -3,7 +3,7 @@
 
 """
 @author: Jerry Wu
-Last Update: 2.5.23
+Last Update: 4.3.23
 """
 # Note 1: This is the block with all the required imports
 
@@ -315,23 +315,20 @@ def downsample(*downsample_parameters):
     # To hand our list input, we need to unpack it and redefine the values with the respective variable names
     bin_size, processing, data, center, time_step, pixel_size, frame_start, frame_end = downsample_parameters
 
-    ## DATA NORMILIZATION AND UNIT ASSIGNMENT ##
+    ### DATA NORMILIZATION AND UNIT ASSIGNMENT ###
 
     # # find the average of X and Y column respectively
     # ave = data.mean(axis=0) --> Jerry thinks this is antiquated code
 
+    ## Step 1: center the data
     # substract averages from each column to find displacement, store into new columns
     data["X displacement (pixels)"] = data['X position'] - center[0]
     data["Y displacement (pixels)"] = data['Y position'] - center[1]
-    # mutiply pixel displacement columns by scaler to find nm displacement, store in new columns
+    ## Step 2: Convert pixels to nm
     data["X displacement (nm)"] = data['X displacement (pixels)']*pixel_size
     data["Y displacement (nm)"] = data['Y displacement (pixels)']*pixel_size
-    # multiply the index counter column by time_step to make a time step column, store into new column
+    ## Step 3; Create time step
     data["Time (ms)"] = data['index']*time_step
-
-    # drop all NaN values *not a number --> Jerry does not think this is necessary any more
-    # data = data.dropna()
-    # #drop NAN try to conserve time (what if we have NAN in x and not in Y? need to drop the whole row)
 
     # Recalculation of center using distance forumla -- Jerry
     # Radius Calculation from distance formula
@@ -353,93 +350,62 @@ def downsample(*downsample_parameters):
     # Make all negative Theta values positive equivalents
     data.loc[data.Angle < 0, ['Angle']] += 360
 
+
     ######################### PROCESSING BLOCK ##############################
+
+    ### Moving Average ###
 
     # Simple Moving Average or "filter" dataframe:
     ma = pd.DataFrame(data.iloc[:, 0], columns=['index'])
 
     window = bin_size
-    # Built in simple moving average function is applied to normal data and stored in dataframe "ma"
-    ma['X movement'] = data.iloc[:, 1].rolling(window=window).mean()
-    ma['Y movement'] = data.iloc[:, 2].rolling(window=window).mean()
-    ma['X displacement (pixels)'] = data.iloc[:,
-                                              4].rolling(window=window).mean()
-    ma['Y displacement (pixels)'] = data.iloc[:,
-                                              5].rolling(window=window).mean()
-    ma['X displacement (nm)'] = data.iloc[:, 6].rolling(window=window).mean()
-    ma['Y displacement (nm)'] = data.iloc[:, 7].rolling(window=window).mean()
-    ma['Time (ms)'] = data.iloc[:, 8].rolling(window=window).mean()
 
-    # This block delets the null spaces in the new dataframe and realigns the data
-    ma = ma.apply(pd.to_numeric, errors='coerce')
+    # for each column after the first (index) apply moving average filter
+    for col in data.columns[1:]:
+        ma[col] = data[col].rolling(window=window).mean()
+
+    # Remove NaN's
+    # In moving avg, all indices less than bin_size will be NaN 
+    ma = ma.apply(pd.to_numeric, errors='coerce') 
     ma = ma.dropna()
+
+    # Reset index
     ma = ma.reset_index(drop=True)
 
-    # Downsampling dataframe:
-    da = pd.DataFrame(data.iloc[:, :])
+    #### Downsampling Dataframe ####
+
+    # Create copy of data dataframe
+    da = data.copy()
+
     # divide original index by sample size and round to nearest whole number to
     # achieve new index number underwhich the origial index is stored
     u = math.floor(frame_start/bin_size)
     v = math.floor(frame_end/bin_size)
 
-    # isolate the column (if we print this it will show as a dataframe with 2 cols: indexes and time values)
-    daT_column = da.iloc[:, 8]
-    daDY_column = da.iloc[:, 7]
-    daDX_column = da.iloc[:, 6]
-    daPY_column = da.iloc[:, 6]
-    daPX_column = da.iloc[:, 4]
-    daI_column = da.iloc[:, 0]
-    daX_column = da.iloc[:, 1]
-    daY_column = da.iloc[:, 2]
-    # We just want the values in the column
-    daT = daT_column.values
-    daDY = daDY_column.values
-    daDX = daDX_column.values
-    daPY = daPY_column.values
-    daPX = daPX_column.values
-    daI = daI_column.values
-    daX = daX_column.values
-    daY = daY_column.values
+    # define downsampling average function
     # This function taken from https://stackoverflow.com/questions/10847660/subsampling-averaging-over-a-numpy-array
     # allows us to downsample by averages over a set number
     # (change 'n' to the number of values you want to average over)
 
-    def average(arr, n):
-        end = n * int(len(arr)/n)
+    def average_column(df, col_num, n):
+        arr = df.iloc[:, col_num].values 
+        end = n * int(len(arr)/n) 
         return np.mean(arr[:end].reshape(-1, n), 1)
+
     # Takes a column from our 'da' dataframe and runs the function over it
     # stores the new values in variables as an array (values in a row)
 
-    # assigning each new row to a varialble
-    Time = average(daT, bin_size)
-    Index = average(daI, bin_size)
-    Xda = average(daX, bin_size)
-    Yda = average(daY, bin_size)
-    Ydisnm = average(daDY, bin_size)
-    Xdisnm = average(daDX, bin_size)
-    YdisP = average(daPY, bin_size)
-    XdisP = average(daPX, bin_size)
 
-    # reshaping the data in a 1D column
-    TimeT = Time[:, np.newaxis]
-    YdisnmT = Ydisnm[:, np.newaxis]
-    XdisnmT = Xdisnm[:, np.newaxis]
-    YdisPT = YdisP[:, np.newaxis]
-    XdisPT = XdisP[:, np.newaxis]
-    XdaT = Xda[:, np.newaxis]
-    YdaT = Yda[:, np.newaxis]
-    IndexT = Index[:, np.newaxis]
+    # Iterate over columns of da except for the first column (index column)
+    col_names = list(da.columns)
+    averaged_cols = []
+    for col_name in col_names:
+        averaged_col = average_column(da, da.columns.get_loc(col_name), bin_size)
+        averaged_cols.append(averaged_col)
 
-    # stores in a new dataframe 'dsa' for: downsampling average
-    dsa = pd.DataFrame(IndexT, columns=['index'])
-    # appending to our data frame
-    dsa['X movement'] = XdaT
-    dsa['Y movement'] = YdaT
-    dsa['X displacement (pixels)'] = XdisPT
-    dsa['Y displacement (pixels)'] = YdisPT
-    dsa['X displacement (nm)'] = XdisnmT
-    dsa['Y displacement (nm)'] = YdisnmT
-    dsa['Time (ms)'] = TimeT
+    # Combine the averaged columns into a new dataframe
+    dsa = pd.DataFrame(averaged_cols).T
+    dsa.columns = da.columns
 
     # DETERMINE PROCESSING AND UNIT TYPE:
     # if more processing methods are to be added, an if statement must be
@@ -614,7 +580,7 @@ def graph(plot_type, *graph_parameters):
 
             plt.axis('square')
             plt.xticks(rotation=45)
-            circle2 = plt.Circle((0, 0), 80, color='m', fill=False)
+            circle2 = plt.Circle((0, 0), expected_radius, color='m', fill=False)
             
             ax.add_patch(circle2)
 
@@ -729,6 +695,7 @@ def graph(plot_type, *graph_parameters):
 
         # Set up Block
 
+        print("!entered angle time block!")
         # Accept my variables from graphing parameters
         (file_name, down_sampled_df, plot_type, display_center, ind_invalid_reading, rad_filter_type_upper,
          rad_filter_type_lower, z_up, z_down, dist_high, dist_low, graph_style, bin_size, frame_start, frame_end,
@@ -744,6 +711,9 @@ def graph(plot_type, *graph_parameters):
         # Call and Run Jerry's Angle Calculation
         data, xy_goodbad, avt_good, avt_bad, data_fil_dsa, data_fil_down_bad, data_fil_up_bad = AngleCalc.avt_filter(
             *inputs_avt_filter)
+
+        print("!Angle Calc completed!f")
+
 
         # Claire's code accepts down_sampled_df as df
         df = down_sampled_df
