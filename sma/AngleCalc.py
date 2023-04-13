@@ -101,7 +101,7 @@ def avt_no_filter(down_sampled_df, frame_start, frame_end):
     return t, theta, thetac
 
 
-# the following function suppports the most recently updated way to calculate angular orbit data
+# the following function supports the most recently updated way to calculate angular orbit data
 # this angle calculation goes through user defined radius filtering
 # INPUTS:
     # the function must have the inputs of

@@ -458,7 +458,7 @@ Template for DORA.graph(*INPUTS)
 use the following for graph_parameters
 #Graph Groupings:
 # create a list of the acceptable groupings for the trajectory maps
-trajectory_map = ["2D", "3D"]
+trajectory_map = ["2D", "2Dpx" ,"3D"]
 
 # create a list of the acceptable groupings for the Angle Time grouping
 AngleTime = ["radius_filter", "find_err_angle", "angular_continuous_filtered",
@@ -492,7 +492,7 @@ frames_per_plot, columns, fig_size_x, fig_size_y]
 
 # #DORA.graph(plot_type,*relevant_parameters)
 
-if plot_type == "2D" or plot_type == "3D":
+if plot_type in trajectory_map:
     DORA.graph(plot_type,*tajectory_map_parameters)
 if plot_type in animations:
     %matplotlib notebook
@@ -511,7 +511,7 @@ def graph(plot_type, *graph_parameters):
     # graph groupings:
 
     # create a list of the acceptable groupings for the trajectory maps
-    trajectory_map = ["2D", "3D"]
+    trajectory_map = ["2D", "2Dpx", "3D"]
 
     # create a list of the acceptable groupings for the Angle Time grouping
     AngleTime = ["radius_filter", "find_excluded_angle", "angular_continuous_filtered",
@@ -522,12 +522,11 @@ def graph(plot_type, *graph_parameters):
     animations = ["interactive", "animated", "HTML","plotly_animated"]
 
     if plot_type in trajectory_map:
-
         #### Set up block#####
 
         # Accept my variables from graphing parameters
         [file_name, down_sampled_df, plot_type, display_center, expected_radius, x_axis_label, y_axis_label, z_axis_label, unit, 
-        pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag] = graph_parameters
+        pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag,cmappx] = graph_parameters
 
         # Claire's code accepts down_sampled_df as df
         df = down_sampled_df
@@ -639,6 +638,110 @@ def graph(plot_type, *graph_parameters):
             if save_plot == "yes":
                 # put title input and date time
                 plt.savefig(my_title+"_2D.png")
+
+        if plot_type == "2Dpx":
+            import plotly.express as px
+            import plotly.graph_objects as go
+            # Define data
+            df = down_sampled_df
+
+            # Define color axis label
+            z_axis_label = "Frames"
+
+            if unit == "pixel":
+                x_axis_label = "X displacement (pixels)"
+                y_axis_label = "Y displacement (pixels)"
+            if unit == "nm":
+                x_axis_label = "X displacement (nm)"
+                y_axis_label = "Y displacement (nm)"
+
+            # Define figure
+            fig = px.scatter(df, 
+                            x=x_axis_label, 
+                            y=y_axis_label, 
+                            color="Time (ms)", 
+                            color_continuous_scale=cmappx,
+                            height=600, width= 800,
+                            )
+
+            # Add circle to plot
+            fig.add_shape(type="circle", xref="x", yref="y",
+                        x0=-expected_radius, y0=-expected_radius,
+                        x1=expected_radius, y1=expected_radius,
+                        line_color="magenta")
+
+            # Add center point to plot
+            if display_center == "yes":
+                fig.add_trace(go.Scatter(x=[0], y=[0], marker_symbol="x", marker_color="magenta", marker_size=15, name="center"))
+            # Set the x and y axis scale ratio to "equal"
+            fig.update_layout(xaxis=dict(scaleanchor="y", scaleratio=1), yaxis=dict(scaleanchor="x", scaleratio=1))
+
+            # Add color axis and set label and ticks
+            fig.update_layout(coloraxis_colorbar=dict(
+                title= z_axis_label,
+                title_font=dict(size=20),
+                tickfont=dict(size=16)
+            ))
+
+
+            # Set plot title
+            pk = os.path.splitext(file_name)[0]
+            graph_type = '2D_Map'
+            list_of_strings = [graph_type, exp_tag]
+            my_title = "_".join(list_of_strings)
+            fig.update_layout(title={'text': my_title,'font': {'size': 25},})
+            # Update layout to adjust margin and prevent overlap
+            fig.update_layout(
+                margin=dict(l=50, r=100, t=50, b=50),
+                legend=dict(x=1.3, y=0.5)
+            )
+
+            # Remove Grid Color and Background color for transparent PNG
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(255,255,255,1)',
+            )
+
+            # Update axis line properties
+            fig.update_layout(
+                xaxis=dict(linecolor='black', linewidth=2, mirror=True),
+                yaxis=dict(linecolor='black', linewidth=2, mirror=True)
+            )
+
+            # Update x and y axis font 
+            fig.update_layout(xaxis_title_font=dict(family='Arial', size=22), 
+                            yaxis_title_font=dict(family='Arial', size=22))
+
+            # Remove Gridlines
+            fig.update_layout(xaxis=dict(showgrid=False, tickfont=dict(size=14)),
+                            yaxis=dict(showgrid=False, tickfont=dict(size=14)))
+
+            # Set axis labels and ranges depending on unit specified
+            if unit == "pixel":
+                fig.update_xaxes(title_text=x_axis_label, range=[pixel_min, pixel_max])
+                fig.update_yaxes(title_text=y_axis_label, range=[pixel_min, pixel_max])
+                fig.update_xaxes(tickmode="linear", tick0=pixel_min, dtick=axis_increment_pixel)
+                fig.update_yaxes(tickmode="linear", tick0=pixel_min, dtick=axis_increment_pixel)
+            if unit == "nm":
+                fig.update_xaxes(title_text=x_axis_label, range=[nm_min, nm_max])
+                fig.update_yaxes(title_text=y_axis_label, range=[nm_min, nm_max])
+                fig.update_xaxes(tickmode="linear", tick0=nm_min, dtick=axis_increment_nm)
+                fig.update_yaxes(tickmode="linear", tick0=nm_min, dtick=axis_increment_nm)
+
+
+            #update tick label size
+            fig.update_xaxes(tickangle=-45, tickfont=dict(size=22))
+            fig.update_yaxes(tickangle=0, tickfont=dict(size=22))
+
+
+            # Show plot
+            fig.show()
+
+            # Save plot
+            if save_plot == "yes":
+                fig.write_image(my_title+"_2D.png")
+
+
         if plot_type == "3D":
             # This block splices the segments between data points and assigns each segment to a color
             points = np.array([x, y, z]).transpose().reshape(-1, 1, 3)
@@ -1184,97 +1287,6 @@ def graph(plot_type, *graph_parameters):
                 with open(my_title+"_animation_html.html", "w") as f:
                     print(ani.to_jshtml(), file=f)
             return HTML(ani.to_jshtml())
-            
-#         if plot_type == "animated" or plot_type == 'HTML':
-#             # allows for animation to animate
-# #             %matplotlib notebook
-#             #reassigning to a dataframe, setting up axis with empty list, aspect ratio
-#             coord = pd.DataFrame(x)
-#             coord.columns = ['x']
-#             coord['y'] = y
-#             fig = plt.figure()
-#             ax = fig.add_subplot(111)
-#             sc = ax.scatter([], [])
-#             plt.axis('square')
-            
-#             # chosing units
-#             if unit == "pixel":
-#                     ax.set_xlim(pixel_min, pixel_max) 
-#                     ax.set_ylim(pixel_min, pixel_max)
-#                     ax.yaxis.set_major_locator(ticker.LinearLocator(axis_increment_pixel))# change to 5 for increments of .5
-#                     ax.xaxis.set_major_locator(ticker.LinearLocator(axis_increment_pixel))
-#                     ax.grid()
-#             if unit == "nm":
-#                     ax.set_xlim(nm_min, nm_max) 
-#                     ax.set_ylim(nm_min, nm_max)
-#                     ax.yaxis.set_major_locator(ticker.LinearLocator(axis_increment_nm))
-#                     ax.xaxis.set_major_locator(ticker.LinearLocator(axis_increment_nm))
-#                     ax.grid()
-#             ax.set_xlabel(x_axis_label, fontweight = 'bold', fontsize = 12)
-#             ax.set_ylabel(y_axis_label, fontweight = 'bold', fontsize = 12)
-            
-            
-#             # Title configuration
-
-#             # take the file name and separate from the extension
-#             # the first value in the tuple is the number
-#             # the second is .csv 
-#             # the number 00086.csv is the peak --> so this code takes the peak number
-#             pk = os.path.splitext(file_name)[0]
-
-#             graph_type = 'Animated_2D_Plot'
-
-#             # change title order!!! 
-#             list_of_strings = [graph_type, exp_tag, pk]
-
-#             #in quotes is the the delimiter between the items in the string
-#             # by default it is a _ 
-#             my_title = "_".join(list_of_strings)
-           
-
-#             # plot title and font configurations
-#             plt.title(my_title , fontweight = 'bold', fontsize = 16)
-
-
-
-
-
-#             # animation function feeds a window of dataframe values into the graphing function at a time,
-#             # iterates over user specified range in dataframe with user specified tail length
-#             # color of animation is also specified here
-#             def animate(count):
-#                 sc.set_offsets(np.c_[coord.x.values[count-tail_length:count],coord.y.values[count-tail_length:count]])
-#                 cmap = plt.cm.Greens
-#                 norm = plt.Normalize(vmin=0, vmax=tail_length)
-#                 z = np.array(range(tail_length))
-#                 c = cmap(norm(z))
-#                 sc.set_color(c)
-#                 #button_ax = plt.axes([.78, .87, .1, .07]) # creates an outline for a potential button
-               
-#                 return sc
-
-#             ani = FuncAnimation(fig, animate, interval= frame_speed, frames = len(coord)) #frames=len(df)
-#             #ani.toggle(ax=button_ax)# potential button toggle for a potential button ;)
-#             if save_plot == 'yes':
-                
-#                 ani.save(my_title+'_animation_gif.gif', writer='pillow', fps=10, dpi=100)
-
-#             plt.tight_layout()
-#             plt.show()
-#             # With out the added if statement below, the animated plot will not animate 
-#             #(due to being a nested function)
-#         if plot_type == 'animated': 
-
-                
-
-#             return ani
-#         # 
-#         if plot_type == 'HTML':
-#             plt.close('all')
-#             if save_plot == 'yes':
-#                 with open(my_title+"_animation_html.html", "w") as f:
-#                     print(ani.to_jshtml(), file=f)
-#             return HTML(ani.to_jshtml())
         
         if plot_type == "interactive":
 
@@ -1318,8 +1330,6 @@ def graph(plot_type, *graph_parameters):
             # plot title and font configurations
             plt.title(my_title , fontweight = 'bold', fontsize = 16)
 
-            
-            
             #assign title
             
             fig.update_layout(title= my_title)
