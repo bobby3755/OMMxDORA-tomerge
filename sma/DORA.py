@@ -470,7 +470,7 @@ animations = ["interactive", "animated", "HTML"]
 
 #Trajectory map parameters:
 tajectory_map_parameters = [file_name, down_sampled_df, plot_type, display_center, expected_radius, x_axis_label, y_axis_label, z_axis_label, unit, 
-pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag]
+pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag,cmappx,marker_size]
 
 #Angle Versus Time (AVT or avt) parameters:
 avt_parameters = [file_name, down_sampled_df, plot_type, display_center, ind_invalid_reading, rad_filter_type_upper,
@@ -526,7 +526,7 @@ def graph(plot_type, *graph_parameters):
 
         # Accept my variables from graphing parameters
         [file_name, down_sampled_df, plot_type, display_center, expected_radius, x_axis_label, y_axis_label, z_axis_label, unit, 
-        pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag,cmappx] = graph_parameters
+        pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, frame_start, frame_end, time_step,cmap,exp_tag,cmappx,marker_size] = graph_parameters
 
         # Claire's code accepts down_sampled_df as df
         df = down_sampled_df
@@ -663,6 +663,8 @@ def graph(plot_type, *graph_parameters):
                             color_continuous_scale=cmappx,
                             height=600, width= 800,
                             )
+            #Change Marker Size
+            fig.update_traces(marker_size=marker_size)
 
             # Add circle to plot
             fig.add_shape(type="circle", xref="x", yref="y",
