@@ -461,8 +461,8 @@ use the following for graph_parameters
 trajectory_map = ["2D", "2Dpx" ,"3D"]
 
 # create a list of the acceptable groupings for the Angle Time grouping
-AngleTime = ["radius_filter", "find_err_angle", "angular_continuous_filtered",
-                "basal3", "angular", "angular_continuous", "find_err_angle_CR"]
+AngleTime = ["radius_filter", "find_err_angle", "angular_continuous",
+                "basal3", "angular_CR", "angular_continuous_CR", "find_err_angle_CR"]
 
 # create a list of the acceptable groupings for the Animations Grouping
 
@@ -476,13 +476,13 @@ pixel_min, pixel_max, axis_increment_nm, axis_increment_pixel, nm_min, nm_max, s
 avt_parameters = [file_name, down_sampled_df, plot_type, display_center, ind_invalid_reading, rad_filter_type_upper,
                   rad_filter_type_lower, z_up, z_down, dist_high, dist_low, graph_style, bin_size, frame_start, frame_end,
                   display_center, exp_tag, x_axis_label, y_axis_label, z_axis_label, unit, pixel_min, pixel_max,
-                  axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag] 
+                  axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag, marker_size] 
 
 #Animated Parameters
 animated_parameters = [file_name, down_sampled_df, plot_type, display_center, ind_invalid_reading, rad_filter_type_upper,
                   rad_filter_type_lower, z_up, z_down, dist_high, dist_low, graph_style, bin_size, frame_start, frame_end,
                   display_center, exp_tag, x_axis_label, y_axis_label, z_axis_label, unit, pixel_min, pixel_max,
-                  axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag, frame_speed, tail_length] 
+                  axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag, frame_speed, tail_length, marker_size, filter_nopass, annotate_nopass] 
 
 #Grid Parameters
 grid_parameters = [file_name, down_sampled_df, plot_type, display_center, exp_tag, x_axis_label, y_axis_label, z_axis_label, unit, 
@@ -544,13 +544,10 @@ def graph(plot_type, *graph_parameters):
         # graph either
         if plot_type == "2D":
 
-            # Let the graphing beghin!!!
-            fig = plt.figure(figsize=(6, 6), dpi=100)
-            # this comand is here to take advantage of the "axes" plotting library
-            ax = fig.add_subplot(111)
+            # Let the graphing begin:
+            fig, ax = plt.subplots(1,1,figsize=(7, 6))
 
             # Set up for color bar
-            #HARD CODE:
             z_axis_label = "Frames" 
 
             # A color bar associated with time needs two things c and cmap
@@ -572,7 +569,7 @@ def graph(plot_type, *graph_parameters):
             tix_1=np.arange(frame_start,last_frame,frame_step)
 
             #scatter plot with a color vector
-            p = ax.scatter(x, y, c=c, cmap = cmap,alpha=0.7)
+            p = ax.scatter(x, y, c=c, cmap = cmap, alpha=0.7, s=marker_size)
             #add a vertical side bar that defines the color
             plt.colorbar(p, label=z_axis_label, shrink=.82, ticks = tix_1 )
 
@@ -596,17 +593,15 @@ def graph(plot_type, *graph_parameters):
             if unit == "pixel":
                 ax.set_xlim(pixel_min, pixel_max)
                 ax.set_ylim(pixel_min, pixel_max)
-                ax.yaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_pixel))
-                ax.xaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_pixel))
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
+                ax.set_yticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
             if unit == "nm":
                 ax.set_xlim(nm_min, nm_max)
                 ax.set_ylim(nm_min, nm_max)
-                ax.yaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_nm))
-                ax.xaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_nm))
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(nm_min, nm_max, axis_increment_nm))
+                ax.set_yticks(np.arange(nm_min, nm_max, axis_increment_nm))
 
             # Jerry Adds a hover cursor
             mplcursors.cursor(hover=True)
@@ -701,7 +696,7 @@ def graph(plot_type, *graph_parameters):
             # Remove Grid Color and Background color for transparent PNG
             fig.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(255,255,255,1)',
+                paper_bgcolor='rgba(0,0,0,0)',
             )
 
             # Update axis line properties
@@ -712,7 +707,9 @@ def graph(plot_type, *graph_parameters):
 
             # Update x and y axis font 
             fig.update_layout(xaxis_title_font=dict(family='Arial', size=22), 
-                            yaxis_title_font=dict(family='Arial', size=22))
+                            yaxis_title_font=dict(family='Arial', size=22),
+                            font_color="black",
+                            title_font_color="black")
 
             # Remove Gridlines
             fig.update_layout(xaxis=dict(showgrid=False, tickfont=dict(size=14)),
@@ -805,54 +802,32 @@ def graph(plot_type, *graph_parameters):
         (file_name, down_sampled_df, plot_type, display_center, ind_invalid_reading, rad_filter_type_upper,
          rad_filter_type_lower, z_up, z_down, dist_high, dist_low, graph_style, bin_size, frame_start, frame_end,
          display_center, title, x_axis_label, y_axis_label, z_axis_label, unit, pixel_min, pixel_max,
-         axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag) = graph_parameters
+         axis_increment_nm, axis_increment_pixel, nm_min, nm_max, save_plot, data_back, cmap, exp_tag, marker_size, filter_nopass, annotate_nopass) = graph_parameters
 
         # import the 2 ways to analyze angular data: 1) Claire's way, 2) Jerry's Way [More Current]
         import AngleCalc
 
         # Gather inputs to Cacluate Angle under Jerry's Angle calculation paradigm
-        inputs_avt_filter = [down_sampled_df, ind_invalid_reading, rad_filter_type_upper,
-                             rad_filter_type_lower, z_up, z_down, dist_high, dist_low, bin_size]
+        AngleCalc_inputs = [down_sampled_df, rad_filter_type_upper, rad_filter_type_lower, z_up, z_down, dist_high, dist_low]
         # Call and Run Jerry's Angle Calculation
-        data, xy_goodbad, avt_good, avt_bad, data_fil_dsa, data_fil_down_bad, data_fil_up_bad = AngleCalc.avt_filter(
-            *inputs_avt_filter)
+        data, data_filtered_pass, data_filtered_nopass, data_filtered_lower_bound_nopass, data_filtered_upper_bound_nopass = AngleCalc.angle_calculations(*AngleCalc_inputs)
 
-        print("!Angle Calc completed!f")
+        print("Updated angle calculations have been calculated")
+        
+        # Let the graphing begin:
+        if plot_type == "radius_filter":
 
-
-        # Claire's code accepts down_sampled_df as df
-        df = down_sampled_df
-
-        #####################Graphing data assignment block##############
-        # Here the code determines the units of the graph, only for cartesian graphs
-        if unit == "pixel":
-            x = df["X displacement (pixels)"]
-            y = df["Y displacement (pixels)"]
-        if unit == "nm":
+            #Assign data as df
+            df = data
             x = df["X displacement (nm)"]
             y = df["Y displacement (nm)"]
-        z = df["Time (ms)"]
-        
-        # unpack list xy_goodbad into respective outputs
-        x_good, y_good, x_bad, y_bad = xy_goodbad
 
-        # Calculate The angle according to Claire's method
-        df_theta = AngleCalc.avt_no_filter(
-            down_sampled_df, frame_start, frame_end)
-
-        
-        t, theta, thetac = AngleCalc.avt_no_filter(
-            down_sampled_df, frame_start, frame_end)
-
-        # Let the graphing begin:
-
-        if plot_type == "radius_filter":
-            fig = plt.figure(figsize=(7, 6), dpi=100)
-            # this comand is here to take advantage of the "axes" plotting library
-            ax = fig.add_subplot(111)
+            x_nopass = data_filtered_nopass["X displacement (nm)"]
+            y_nopass = data_filtered_nopass["Y displacement (nm)"]
+            # Let the graphing begin:
+            fig_rad_filter, ax = plt.subplots(1,1,figsize=(7, 6))
 
             # Set up for color bar
-            #HARD CODE:
             z_axis_label = "Frames" 
 
             # A color bar associated with time needs two things c and cmap
@@ -870,32 +845,26 @@ def graph(plot_type, *graph_parameters):
             #tix = np.linspace(frame_start,last_frame,9)
             #tix_1 = np.round(tix,0)
             frame_step=int((last_frame-frame_start)/5)
-    
+
             tix_1=np.arange(frame_start,last_frame,frame_step)
-            #scatter plot with a color vector
-            p = ax.scatter(x, y, c=c, cmap = cmap,alpha=0.7)
+
+            #plot passing data
+            p = ax.scatter(x, y, c=c, cmap = cmap, alpha=0.7, s=marker_size)
             #add a vertical side bar that defines the color
             plt.colorbar(p, label=z_axis_label, shrink=.82, ticks = tix_1 )
 
+            #plot not passing data
+            p2 = ax.scatter(x_nopass, y_nopass, c="red")
 
             plt.axis('square')
             plt.xticks(rotation=45)
 
-            # set graph limit conditions depending on unit specified
-            if unit == "pixel":
-                ax.set_xlim(pixel_min, pixel_max)
-                ax.set_ylim(pixel_min, pixel_max)
-                ax.yaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_pixel))
-                ax.xaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_pixel))
             if unit == "nm":
-                ax.set_xlim(nm_min, nm_max)
-                ax.set_ylim(nm_min, nm_max)
-                ax.yaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_nm))
-                ax.xaxis.set_major_locator(
-                    ticker.LinearLocator(axis_increment_nm))
+                circle3 = plt.Circle((0, 0), dist_high, color='k', fill=False, linestyle='dotted', linewidth=2)
+                circle4 = plt.Circle((0, 0), dist_low, color='k', fill=False, linestyle='dotted', linewidth=2)
+                ax.add_patch(circle3)
+                ax.add_patch(circle4)
+
 
             # display center
             if display_center == "yes":
@@ -904,7 +873,21 @@ def graph(plot_type, *graph_parameters):
                 # plots center point as magenta X
                 ax.scatter(0, 0, color='Magenta', marker="X", s=150)
                 plt.text(x=center1[0] + 0.02,
-                         y=center1[1] + 0.02, s='CENTER')
+                        y=center1[1] + 0.02, s='CENTER')
+
+            # set graph limit conditions depending on unit specified
+            if unit == "pixel":
+                ax.set_xlim(pixel_min, pixel_max)
+                ax.set_ylim(pixel_min, pixel_max)
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
+                ax.set_yticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
+            if unit == "nm":
+                ax.set_xlim(nm_min, nm_max)
+                ax.set_ylim(nm_min, nm_max)
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(nm_min, nm_max, axis_increment_nm))
+                ax.set_yticks(np.arange(nm_min, nm_max, axis_increment_nm))
 
             # Jerry Adds a hover cursor
             mplcursors.cursor(hover=True)
@@ -915,13 +898,14 @@ def graph(plot_type, *graph_parameters):
             ax.set_ylabel(y_axis_label, fontweight='bold', fontsize=14)
 
             # plot title and font configurations
+
             # take the file name and separate from the extension
             # the first value in the tuple is the number
             # the second is .csv 
             # the number 00086.csv is the peak --> so this code takes the peak number
             pk = os.path.splitext(file_name)[0]
 
-            graph_type = plot_type
+            graph_type = '2D_Radius_Filtering'
 
             # change title order!!! 
             list_of_strings = [graph_type, exp_tag]
@@ -929,10 +913,12 @@ def graph(plot_type, *graph_parameters):
             #in quotes is the the delimiter between the items in the string
             # by default it is a _ 
             my_title = "_".join(list_of_strings)
+
             plt.title(my_title, fontweight='bold', fontsize=16)
 
             if save_plot == "yes":
                 plt.savefig(my_title+"_2D.png")  # put title input and date time
+
         if plot_type == "find_excluded_angle":
 
             # data organization
@@ -1016,72 +1002,99 @@ def graph(plot_type, *graph_parameters):
             mplcursors.cursor(hover=True)
 
             # Graph the newly calcuated Angular Continuous data, now filtered for good points only
-        if plot_type == "angular_continuous_filtered":
-
-            # data organization
-            times = avt_good["Time (ms)"]
-            conti_angle = avt_good["Continuous Angle"]
-
-            # Graph a Scatter Plot otherwize the hover tool hovers to made up points
-            fig, ax = plt.subplots()
-
-            if graph_style == 'scatter':
-                ax.scatter(times, conti_angle, c='m', s=5)
+        if plot_type == "angular_continuous":
+            # Data Assignment 
+            if filter_nopass == "yes":
+                df = data_filtered_pass
             else:
-                line, = plt.plot(times, conti_angle, 'm')
+                df = data
+                    
+            # Graphing Section
+            import plotly.graph_objs as go
 
-            # setting up for making vertical lines or indications of bad points (high and low points)
-            ang_min = min(conti_angle)
-            ang_max = max(conti_angle)
+            # Create a new figure
+            fig = go.Figure()
 
-            # find and graph lower bad values
-            bad_times_down = data_fil_down_bad["Time (ms)"]
-            ax.vlines([bad_times_down], ang_min, ang_max,
-                      linestyles='dashed', colors='red')
+            # Add the main line trace to the figure
+            fig.add_trace(go.Scatter(x=df["Time (ms)"], y=df["Continuous Angle"], 
+                                    name="Raw Data", line = dict(color = 'rgb(36,132,160)')))
+                
+            fig.update_layout(
+                xaxis_title="Time (ms)",
+                yaxis_title="Continuous Angle (degrees)"
+            )
 
-            # find and graph upper bad values
-            bad_times_up = data_fil_up_bad["Time (ms)"]
-            ax.vlines([bad_times_up], ang_min, ang_max,
-                      linestyles='dashed', colors='black')
+            # Set plot title
+            pk = os.path.splitext(file_name)[0]
+            graph_type = 'Continuous Angle'
+            list_of_strings = [graph_type, exp_tag]
+            my_title = "_".join(list_of_strings)
+            fig.update_layout(title={'text': my_title,'font': {'size': 25},})
 
-            # find and graph the invalid bad values
-            invalid_times = data_back["Time (ms)"]
-            ax.vlines([invalid_times], ang_min, ang_max,
-                      linestyles='dashed', colors='darkcyan')
 
-            # Legend
-            ax.legend(['Angle data', 'Below Lower Bound', 'Above Upper Bound',
-                      'Invalid Readings'],bbox_to_anchor=(1.04,0), loc='lower right')
+            # Remove Grid Color and Background color for transparent PNG
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+            )
 
-            # formatting
-            plt.rcParams['figure.figsize'] = [20, 6]
+            # Update axis line properties
+            fig.update_layout(
+                xaxis=dict(linecolor='black', linewidth=2, mirror=True),
+                yaxis=dict(linecolor='black', linewidth=2, mirror=True)
+            )
 
-            plt.xlabel('Time (ms)')
-            plt.ylabel('Angle Accumulation (degrees)')
+            # Update x and y axis font 
+            fig.update_layout(xaxis_title_font=dict(family='Arial', size=22), 
+                            yaxis_title_font=dict(family='Arial', size=22),
+                            font_color="black",
+                            title_font_color="black")
 
-            # Title configuration
+            # Remove Gridlines
+            fig.update_layout(xaxis=dict(showgrid=False, tickfont=dict(size=14)),
+                            yaxis=dict(showgrid=False, tickfont=dict(size=14)))
 
-            graph_type = 'Accumulation of Angle (degrees) as a function of Time (ms)'
+            if annotate_nopass == "yes":
+                # Find times that do not pass the filter and graph a vertical line with different colors
+                df_nopass_list = [data_filtered_lower_bound_nopass, data_filtered_upper_bound_nopass, data_back]
+                colors = ['rgb(182,0,115)', 'rgb(206,189,222)', 'rgb(55,169,229)'] #pastel red, blue, yellow
+                names = ["A", "B", "C"]  # names for each line
 
-            #in quotes is the the delimiter between the items in the string
-            # by default it is a 
-            my_title = graph_type + "\n" + exp_tag #add a line break between graph name and defining parameters
-            plt.title(my_title)
+                for i, dff in enumerate(df_nopass_list):
+                    times_nopass = dff["Time (ms)"]
+                    for t in times_nopass:
+                        fig.add_vline(x=t, line_width=3, line_dash="dash", line_color=colors[i], name=names[i])
+                        
+                # Show the Legend
+                from IPython.display import Image
 
-            plt.xlim(0, max(times)+1000)
-            plt.ylim(ang_min-180, ang_max+180)
-            ax.set_xticks(np.arange(0, max(times)+1000, 1000))
-            ax.set_yticks(np.arange(ang_min-180, ang_max+180, 180))
-            plt.xticks(rotation=-45)
-            plt.grid()
+                # Load a PNG image from a file path
+                Image(filename=r'D:\Jerry\code\OMMxDORA-tomerge\Continuous_Angle_Plot_Legend_small.jpg')
 
-            # hovering attempt 2
-            # added by Jerry for Matplotlib compatible hovering
-            mplcursors.cursor(hover=True)
+            # Show the figure
+            fig.show()
 
-        # Angular plot
+
+        # Claire's Plots
         
-        if plot_type == "angular":
+        # Claire's code accepts down_sampled_df as df
+        df = down_sampled_df
+
+        #####################Graphing data assignment block##############
+        # Here the code determines the units of the graph, only for cartesian graphs
+        if unit == "pixel":
+            x = df["X displacement (pixels)"]
+            y = df["Y displacement (pixels)"]
+        if unit == "nm":
+            x = df["X displacement (nm)"]
+            y = df["Y displacement (nm)"]
+        z = df["Time (ms)"]
+        
+        # Calculate The angle according to Claire's method       
+        t, theta, thetac = AngleCalc.avt_no_filter(down_sampled_df, frame_start, frame_end)
+
+
+        if plot_type == "angular_CR":
             import plotly.express as px
 
             # Title configuration
@@ -1126,7 +1139,7 @@ def graph(plot_type, *graph_parameters):
 
            
             # Angular continuous plot
-        if plot_type == "angular_continuous":
+        if plot_type == "angular_continuous_CR":
             
             import plotly.express as px
 
@@ -1428,18 +1441,19 @@ def graph(plot_type, *graph_parameters):
             #cbar2.set_ticklabels(tix_c)
             plt.axis('square')
             plt.xticks(rotation=45)
+            # set graph limit conditions depending on unit specified
             if unit == "pixel":
-                ax.set_xlim(pixel_min, pixel_max) 
+                ax.set_xlim(pixel_min, pixel_max)
                 ax.set_ylim(pixel_min, pixel_max)
-                ax.yaxis.set_major_locator(ticker.LinearLocator(axis_increment_pixel))# change to 5 for increments of .5
-                ax.xaxis.set_major_locator(ticker.LinearLocator(axis_increment_pixel))
-                ax.grid()
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
+                ax.set_yticks(np.arange(pixel_min, pixel_max, axis_increment_pixel))
             if unit == "nm":
-                ax.set_xlim(nm_min, nm_max) 
+                ax.set_xlim(nm_min, nm_max)
                 ax.set_ylim(nm_min, nm_max)
-                ax.yaxis.set_major_locator(ticker.LinearLocator(axis_increment_nm))
-                ax.xaxis.set_major_locator(ticker.LinearLocator(axis_increment_nm))
-                ax.grid()
+                # Set the x and y tick increments
+                ax.set_xticks(np.arange(nm_min, nm_max, axis_increment_nm))
+                ax.set_yticks(np.arange(nm_min, nm_max, axis_increment_nm))
         
         i = 0
         dfs = np.array_split(df,j) # splits large dataframe into "j" equal dataframes
@@ -1449,7 +1463,7 @@ def graph(plot_type, *graph_parameters):
         cols = columns
         rows = int(math.ceil(j / cols)) #determining rows based on the number of graphs and columns
 
-        gs = gridspec.GridSpec(rows, cols, wspace = .25, hspace = .25)# disallows overlap
+        gs = gridspec.GridSpec(rows, cols, wspace = .5, hspace = .5)# disallows overlap
         fig = plt.figure(figsize = (fig_size_x,fig_size_y))
         
         while i < j:
